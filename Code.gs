@@ -1,18 +1,34 @@
+// Add this to handle the "Preflight" browser check
+function doOptions(e) {
+  return ContentService.createTextOutput("")
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader("Access-Control-Allow-Origin", "https://crustable.github.io")
+    .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
 function doGet(e) {
-  // Default Route: Load SPA Dashboard with BOOTSTRAPPED Data
-  const template = HtmlService.createTemplateFromFile('Index');
-  
-  // Try to grab the dashboard data right now, directly on the server
-  try {
-    const dashboardData = apiGetDashboard();
-    template.bootstrappedDashboard = JSON.stringify(dashboardData);
-  } catch (err) {
-    // Failsafe in case of a temporary database lock
-    template.bootstrappedDashboard = "null";
+  const action = e.parameter.action;
+  let result;
+
+  if (action === 'getDashboard') {
+    result = apiGetDashboard();
+  } else if (action === 'getRequests') {
+    result = apiGetRequestsHistory();
   }
-  return template.evaluate()
-    .setTitle('Pathway Request System v3')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader("Access-Control-Allow-Origin", "https://crustable.github.io");
+}
+
+function doPost(e) {
+  const payload = JSON.parse(e.postData.contents);
+  const result = submitRequest(payload); // Your existing function
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader("Access-Control-Allow-Origin", "https://crustable.github.io");
 }
 
 /**
