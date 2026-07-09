@@ -273,20 +273,233 @@
  </div>
 
 
- <script>
+<script>
 // Hardcode the URL so your GitHub-hosted site knows exactly where to send data
 const CONFIG = {
   // Switch this URL whenever you redeploy your backend
   GAS_URL: "https://script.google.com/macros/s/AKfycbx5WNAjOkH09oP31REl7g1claJuNTSjZA__q8L77DBw7k64cCi7xubxCAs5xXwc2tUJmw/exec"
 };
 
-// Use it everywhere in your code
+// Standard fetch for when the user navigates away and comes back
 async function fetchDashboard() {
-  const response = await fetch(`${CONFIG.GAS_URL}?action=getDashboard`);
+  try {
+    // This is the new, standard web way to get data
+    const response = await fetch(`${CONFIG.GAS_URL}?action=getDashboard`);
+    const data = await response.json();
+    
+    // Now pass the data to your existing render function
+    renderDashboard(data);
+  } catch (err) {
+    showError(err.message);
+  }
 }
-   // CATCH THE PRE-LOADED DATA FROM THE SERVER
-   let initialDashboardData = <?!= typeof bootstrappedDashboard !== 'undefined' ? bootstrappedDashboard : 'null' ?>;
+ 
+   // The dedicated rendering function for the dashboard UI
+   function renderDashboard(data) {
+     const content = document.getElementById('content');
+     content.innerHTML = `
+       <div class="cards">
+         <div class="card"><h3>Total Database Rows</h3><div class="value">${data.stats.total}</div></div>
+         <div class="card"><h3>Submitted Pipeline</h3><div class="value" style="color:var(--accent)">${data.stats.submitted}</div></div>
+         <div class="card"><h3>Pending Decisions</h3><div class="value" style="color:var(--warning)">${data.stats.pending}</div></div>
+         <div class="card"><h3>Approved Clearance</h3><div class="value" style="color:var(--success)">${data.stats.approved}</div></div>
+       </div>
+       <h2 style="margin-top:40px;margin-bottom:16px;font-size:20px;font-weight:600;">Recent Procurement Events</h2>
+       <div class="table-wrap">
+         <table>
+           <thead>
+             <tr>
+               <th>Record ID</th>
+               <th>Request Name / Summary</th>
+               <th>Cost Total</th>
+               <th>Workflow Assignment</th>
+               <th>Current Status</th>
+             </tr>
+           </thead>
+           <tbody>
+             ${data.recentRequests.map(r => `
+               <tr>
+                 <td style="font-weight:600;">
+                   <a href="#" onclick="switchView('details', '${esc(r.id)}'); return false;" style="color:var(--accent); text-decoration:underline;">
+                     ${esc(r.id)}
+                   </a>
+                 </td>
+                 <td>
+                   <div style="font-weight:500;">${esc(r.title)}</div>
+                   <div style="font-size:12px;color:var(--muted)">${esc(r.department)}</div>
+                 </td>
+                 <td style="font-weight:500;">$${Number(r.total || 0).toFixed(2)}</td>
+                 <td style="font-size:13px;color:var(--muted);">${esc(r.priority)}</td>
+                 <td><span class="badge ${getStatusClass(r.status)}">${esc(r.status)}</span></td>
+               </tr>
+             `).join('')}
+             ${data.recentRequests.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No records registered.</td></tr>' : ''}
+           </tbody>
+         </table>
+       </div>
+     `;
+   }
 
+async function fetchRequestsHistory() {
+  try {
+    // 1. Fetch from your backend API
+    const response = await fetch(`${CONFIG.GAS_URL}?action=getRequests`);
+    const rows = await response.json();
+    // 2. Build the UI
+    const content = document.getElementById('content');
+    content.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title Summary</th>
+              <th>Total</th>
+              <th>Assignee Owner</th>
+              <th>Status Phase</th>
+              <th>File</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td style="font-weight:600;">
+                  <a href="#" onclick="switchView('details', '${esc(r['Request ID'])}'); return false;" style="color:var(--accent); text-decoration:underline;">
+                    ${esc(r['Request ID'])}
+                  </a>
+                </td>
+                <td>
+                  <div style="font-weight:500;">${esc(r['Request Title'])}</div>
+                  <div style="font-size:12px;color:var(--muted);">${esc(r['Team(s)'])}</div>
+                </td>
+                <td style="font-weight:500;">$${Number(r['Total Cost'] || 0).toFixed(2)}</td>
+                <td style="font-size:13px;color:var(--muted);">${esc(r['Current Approver'] || '-')}</td>
+                <td><span class="badge ${getStatusClass(r['Status'])}">${esc(r['Status'])}</span></td>
+                <td>
+                  ${r['PDF Link'] ? `<a href="${r['PDF Link']}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;">View PDF</a>` : `<span style="color:var(--muted)">Unavailable</span>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function fetchRecordDetails(id) {
+  try {
+    // 1. Use fetch() instead of google.script.run
+    const response = await fetch(`${CONFIG.GAS_URL}?action=getDetails&id=${id}`);
+    const res = await response.json();
+    // 2. The rest of your existing logic remains the same
+    const content = document.getElementById('content');
+    if (!res || !res.request) {
+      content.innerHTML = `<div style="padding:20px;color:var(--danger)">Record ${esc(id)} was not resolved or found in databases.</div>`;
+      return;
+    }
+
+    const req = res.request;
+    const title = document.getElementById('pageTitle');
+    title.innerHTML = `Request ID: <span style="color:var(--accent)">${esc(id)}</span>`;
+    // Check if there is a PDF Link in the row
+    const pdfUrl = req['PDF Link'] || req.pdfLink;
+    const pdfButtonHtml = pdfUrl
+      ? `<a href="${pdfUrl}" target="_blank" class="primary-btn" style="display:block; text-align:center; text-decoration:none; margin-top:20px; width:100%;">Download / View PDF</a>`
+      : `<button class="secondary" disabled style="width:100%; margin-top:20px; opacity:0.5; cursor:not-allowed;">PDF Unavailable</button>`;
+
+    content.innerHTML = `
+      <div style="margin-bottom:20px;">
+        <button class="secondary" onclick="switchView('dashboard')" style="margin-top:0;">&larr; Back to Dashboard</button>
+      </div>
+      
+      <div class="detail-grid">
+        <div>
+          <div class="detail-block">
+            <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Request Summary</h2>
+            <div class="detail-label">Summary</div>
+            <div class="detail-value" style="font-size:18px;font-weight:600;color:var(--accent);">${esc(req['Request Title'] || req.title)}</div>
+          
+            <div class="grid two">
+              <div>
+                <div class="detail-label">Submitter</div>
+                <div class="detail-value">${esc(req['Submitter Name'] || req.submitterName)} (${esc(req['Submitter Email'] || req.submitterEmail)})</div>
+              </div>
+              <div>
+                <div class="detail-label">Required Deadline</div>
+                <div class="detail-value">${esc(req['Date Needed By'] || req.dateNeededBy)}</div>
+              </div>
+            </div>
+
+            <div class="detail-label">Selected Teams</div>
+            <div class="detail-value">${esc(req['Team(s)'] || req.teams)}</div>
+          </div>
+
+          <div class="detail-block">
+            <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Justification</h2>
+            <div class="detail-label">Business Purpose</div>
+            <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Business Justification'] || req.businessJustification || 'None declared')}</div>
+          
+            <div class="detail-label" style="margin-top:16px;">Technical Infrastructure Blueprint Specifications</div>
+            <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Technical Justification'] || req.technicalJustification || 'None declared')}</div>
+          </div>
+
+          <div class="detail-block">
+            <h2 style="font-size:18px;margin-bottom:16px;font-weight:600;">Requested Items:</h2>
+            <div class="table-wrap" style="margin-top:0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item Description</th>
+                    <th>Vendor</th>
+                    <th>Qty</th>
+                    <th>Unit Rate</th>
+                    <th>Subtotal Valuation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(res.items || []).map(it => `
+                    <tr>
+                      <td style="font-weight:500;">
+                        ${it['Item Name'] || it.itemName}
+                        ${(it['Item Link'] || it.itemLink) ? `<br><a href="${it['Item Link'] || it.itemLink}" target="_blank" style="font-size:11px;color:var(--accent);">Catalog Reference URL &rarr;</a>` : ''}
+                      </td>
+                      <td>${esc(it['Vendor'] || it.vendor || '-')}</td>
+                      <td>${esc(it['Quantity'] || it.quantity)}</td>
+                      <td>$${Number(it['Unit Cost'] || it.unitCost || 0).toFixed(2)}</td>
+                      <td style="font-weight:600;color:var(--accent);">$${Number(it['Total Cost'] || (it.quantity * it.unitCost) || 0).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                  ${(!res.items || res.items.length === 0) ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No line item structures.</td></tr>' : ''}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="detail-block">
+            <h2 style="font-size:16px;margin-bottom:16px;font-weight:600;">Approval Step</h2>
+            <div class="detail-label">Current Status</div>
+            <div style="margin-bottom:20px;"><span class="badge ${getStatusClass(req['Status'] || req.status)}" style="font-size:14px;padding:8px 16px;">${esc(req['Status'] || req.status)}</span></div>
+          
+            <div class="detail-label">Current Task Assigned Owner</div>
+            <div class="detail-value" style="font-weight:600;">${esc(req['Current Approver'] || req.currentApprover || 'Pipeline Resolved')}</div>
+
+            <div class="detail-label">Total Request Cost</div>
+            <div class="value" style="color:var(--success);font-size:28px;font-weight:700;letter-spacing:-0.5px;">$${Number(req['Total Cost'] || req.totalCost || 0).toFixed(2)}</div>
+          
+            ${pdfButtonHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    showError(err.message);
+  }
+}
 
    // State Tracking
    let activePage = 'dashboard';
@@ -338,228 +551,6 @@ async function fetchDashboard() {
        content.innerHTML = '<div style="padding:20px;color:var(--muted)">Module interface error path context.</div>';
      }
    }
-
-
-   // Standard fetch for when the user navigates away and comes back
-   function fetchDashboard() {
-     google.script.run
-       .withSuccessHandler(data => renderDashboard(data))
-       .withFailureHandler(err => showError(err.message))
-       .apiGetDashboard();
-   }
-
-
-   // The dedicated rendering function for the dashboard UI
-   function renderDashboard(data) {
-     const content = document.getElementById('content');
-     content.innerHTML = `
-       <div class="cards">
-         <div class="card"><h3>Total Database Rows</h3><div class="value">${data.stats.total}</div></div>
-         <div class="card"><h3>Submitted Pipeline</h3><div class="value" style="color:var(--accent)">${data.stats.submitted}</div></div>
-         <div class="card"><h3>Pending Decisions</h3><div class="value" style="color:var(--warning)">${data.stats.pending}</div></div>
-         <div class="card"><h3>Approved Clearance</h3><div class="value" style="color:var(--success)">${data.stats.approved}</div></div>
-       </div>
-       <h2 style="margin-top:40px;margin-bottom:16px;font-size:20px;font-weight:600;">Recent Procurement Events</h2>
-       <div class="table-wrap">
-         <table>
-           <thead>
-             <tr>
-               <th>Record ID</th>
-               <th>Request Name / Summary</th>
-               <th>Cost Total</th>
-               <th>Workflow Assignment</th>
-               <th>Current Status</th>
-             </tr>
-           </thead>
-           <tbody>
-             ${data.recentRequests.map(r => `
-               <tr>
-                 <td style="font-weight:600;">
-                   <a href="#" onclick="switchView('details', '${esc(r.id)}'); return false;" style="color:var(--accent); text-decoration:underline;">
-                     ${esc(r.id)}
-                   </a>
-                 </td>
-                 <td>
-                   <div style="font-weight:500;">${esc(r.title)}</div>
-                   <div style="font-size:12px;color:var(--muted)">${esc(r.department)}</div>
-                 </td>
-                 <td style="font-weight:500;">$${Number(r.total || 0).toFixed(2)}</td>
-                 <td style="font-size:13px;color:var(--muted);">${esc(r.priority)}</td>
-                 <td><span class="badge ${getStatusClass(r.status)}">${esc(r.status)}</span></td>
-               </tr>
-             `).join('')}
-             ${data.recentRequests.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No records registered.</td></tr>' : ''}
-           </tbody>
-         </table>
-       </div>
-     `;
-   }
-
-
-   function fetchRequestsHistory() {
-     google.script.run
-       .withSuccessHandler(rows => {
-         const content = document.getElementById('content');
-         content.innerHTML = `
-           <div class="table-wrap">
-             <table>
-               <thead>
-                 <tr>
-                   <th>ID</th>
-                   <th>Title Summary</th>
-                   <th>Total</th>
-                   <th>Assignee Owner</th>
-                   <th>Status Phase</th>
-                   <th>File</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 ${rows.map(r => `
-                   <tr>
-                     <td style="font-weight:600;">
-                       <a href="#" onclick="switchView('details', '${esc(r['Request ID'])}'); return false;" style="color:var(--accent); text-decoration:underline;">
-                         ${esc(r['Request ID'])}
-                       </a>
-                     </td>
-                     <td>
-                       <div style="font-weight:500;">${esc(r['Request Title'])}</div>
-                       <div style="font-size:12px;color:var(--muted);">${esc(r['Team(s)'])}</div>
-                     </td>
-                     <td style="font-weight:500;">$${Number(r['Total Cost'] || 0).toFixed(2)}</td>
-                     <td style="font-size:13px;color:var(--muted);">${esc(r['Current Approver'] || '-')}</td>
-                     <td><span class="badge ${getStatusClass(r['Status'])}">${esc(r['Status'])}</span></td>
-                     <td>
-                       ${r['PDF Link'] ? `<a href="${r['PDF Link']}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;">View PDF</a>` : `<span style="color:var(--muted)">Unavailable</span>`}
-                     </td>
-                   </tr>
-                 `).join('')}
-               </tbody>
-             </table>
-           </div>
-         `;
-       })
-       .withFailureHandler(err => showError(err.message))
-       .apiGetAllRequests();
-   }
-
-
-   function fetchRecordDetails(id) {
-     google.script.run
-       .withSuccessHandler(res => {
-         const content = document.getElementById('content');
-         if (!res || !res.request) {
-           content.innerHTML = `<div style="padding:20px;color:var(--danger)">Record ${esc(id)} was not resolved or found in databases.</div>`;
-           return;
-         }
-      
-         const req = res.request;
-         const title = document.getElementById('pageTitle');
-         title.innerHTML = `Request ID: <span style="color:var(--accent)">${esc(id)}</span>`;
-
-
-         // Check if there is a PDF Link in the row
-         const pdfUrl = req['PDF Link'] || req.pdfLink;
-         const pdfButtonHtml = pdfUrl
-           ? `<a href="${pdfUrl}" target="_blank" class="primary-btn" style="display:block; text-align:center; text-decoration:none; margin-top:20px; width:100%;">Download / View PDF</a>`
-           : `<button class="secondary" disabled style="width:100%; margin-top:20px; opacity:0.5; cursor:not-allowed;">PDF Unavailable</button>`;
-
-
-         content.innerHTML = `
-           <div style="margin-bottom:20px;">
-             <button class="secondary" onclick="switchView('dashboard')" style="margin-top:0;">&larr; Back to Dashboard</button>
-           </div>
-        
-           <div class="detail-grid">
-             <div>
-               <div class="detail-block">
-                 <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Request Summary</h2>
-                 <div class="detail-label">Summary</div>
-                 <div class="detail-value" style="font-size:18px;font-weight:600;color:var(--accent);">${esc(req['Request Title'] || req.title)}</div>
-              
-                 <div class="grid two">
-                   <div>
-                     <div class="detail-label">Submitter</div>
-                     <div class="detail-value">${esc(req['Submitter Name'] || req.submitterName)} (${esc(req['Submitter Email'] || req.submitterEmail)})</div>
-                   </div>
-                   <div>
-                     <div class="detail-label">Required Deadline</div>
-                     <div class="detail-value">${esc(req['Date Needed By'] || req.dateNeededBy)}</div>
-                   </div>
-                 </div>
-
-
-                 <div class="detail-label">Selected Teams</div>
-                 <div class="detail-value">${esc(req['Team(s)'] || req.teams)}</div>
-               </div>
-
-
-               <div class="detail-block">
-                 <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Justification</h2>
-                 <div class="detail-label">Business Purpose</div>
-                 <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Business Justification'] || req.businessJustification || 'None declared')}</div>
-              
-                 <div class="detail-label" style="margin-top:16px;">Technical Infrastructure Blueprint Specifications</div>
-                 <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Technical Justification'] || req.technicalJustification || 'None declared')}</div>
-               </div>
-
-
-               <div class="detail-block">
-                 <h2 style="font-size:18px;margin-bottom:16px;font-weight:600;">Requested Items:</h2>
-                 <div class="table-wrap" style="margin-top:0;">
-                   <table>
-                     <thead>
-                       <tr>
-                         <th>Item Description</th>
-                         <th>Vendor</th>
-                         <th>Qty</th>
-                         <th>Unit Rate</th>
-                         <th>Subtotal Valuation</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       ${(res.items || []).map(it => `
-                         <tr>
-                           <td style="font-weight:500;">
-                             ${it['Item Name'] || it.itemName}
-                             ${(it['Item Link'] || it.itemLink) ? `<br><a href="${it['Item Link'] || it.itemLink}" target="_blank" style="font-size:11px;color:var(--accent);">Catalog Reference URL &rarr;</a>` : ''}
-                           </td>
-                           <td>${esc(it['Vendor'] || it.vendor || '-')}</td>
-                           <td>${esc(it['Quantity'] || it.quantity)}</td>
-                           <td>$${Number(it['Unit Cost'] || it.unitCost || 0).toFixed(2)}</td>
-                           <td style="font-weight:600;color:var(--accent);">$${Number(it['Total Cost'] || (it.quantity * it.unitCost) || 0).toFixed(2)}</td>
-                         </tr>
-                       `).join('')}
-                       ${(!res.items || res.items.length === 0) ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No line item structures.</td></tr>' : ''}
-                     </tbody>
-                   </table>
-                 </div>
-               </div>
-             </div>
-
-
-             <div>
-               <div class="detail-block">
-                 <h2 style="font-size:16px;margin-bottom:16px;font-weight:600;">Approval Step</h2>
-                 <div class="detail-label">Current Status</div>
-                 <div style="margin-bottom:20px;"><span class="badge ${getStatusClass(req['Status'] || req.status)}" style="font-size:14px;padding:8px 16px;">${esc(req['Status'] || req.status)}</span></div>
-              
-                 <div class="detail-label">Current Task Assigned Owner</div>
-                 <div class="detail-value" style="font-weight:600;">${esc(req['Current Approver'] || req.currentApprover || 'Pipeline Resolved')}</div>
-
-
-                 <div class="detail-label">Total Request Cost</div>
-                 <div class="value" style="color:var(--success);font-size:28px;font-weight:700;letter-spacing:-0.5px;">$${Number(req['Total Cost'] || req.totalCost || 0).toFixed(2)}</div>
-              
-                 ${pdfButtonHtml}
-               </div>
-             </div>
-           </div>
-         `;
-       })
-       .withFailureHandler(err => showError(err.message))
-       .getRequestDetailsForView(id);
-   }
-
 
    let itemCount = 0;
    function renderNewForm() {
@@ -635,7 +626,7 @@ async function fetchDashboard() {
    }
 
 
-   function handleFormSubmit(e) {
+   async function handleFormSubmit(e) {
      e.preventDefault();
      const form = e.target;
      const submitBtn = document.getElementById('formSubmitBtn');
@@ -676,8 +667,27 @@ async function fetchDashboard() {
        items
      };
   
-     google.script.run
-       .withSuccessHandler(res => {
+  try {
+    const response = await fetch(CONFIG.GAS_URL, {
+      method: 'POST',
+      mode: 'cors',
+      body: JSON.stringify(payload)
+    });
+    
+    const res = await response.json();
+    
+    // Success handling
+    resBox.innerHTML = `Transmission Confirmation Secure: Created index key reference <strong>${res.requestId}</strong>. Processing confirmation manifests.`;
+    setTimeout(() => switchView('dashboard'), 2500);
+    
+  } catch (err) {
+    // Failure handling
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Retry Transaction Submission';
+    resBox.textContent = 'Execution Failure Fault Exception: ' + err.message;
+    resBox.style.background = 'rgba(239,68,68,0.1)';
+  }
+}       .withSuccessHandler(res => {
          resBox.innerHTML = `Transmission Confirmation Secure: Created index key reference <strong>${res.requestId}</strong>. Processing confirmation manifests.`;
          setTimeout(() => switchView('dashboard'), 2500);
        })
