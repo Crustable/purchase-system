@@ -274,9 +274,17 @@
 
 
  <script>
-   // Pulls down the Web App base URL natively via direct scriptlet evaluation
-   const WEB_APP_URL = "<?= ScriptApp.getService().getUrl() ?>";
-    // CATCH THE PRE-LOADED DATA FROM THE SERVER
+// Hardcode the URL so your GitHub-hosted site knows exactly where to send data
+const CONFIG = {
+  // Switch this URL whenever you redeploy your backend
+  GAS_URL: "https://script.google.com/macros/s/AKfycbx5WNAjOkH09oP31REl7g1claJuNTSjZA__q8L77DBw7k64cCi7xubxCAs5xXwc2tUJmw/exec"
+};
+
+// Use it everywhere in your code
+async function fetchDashboard() {
+  const response = await fetch(`${CONFIG.GAS_URL}?action=getDashboard`);
+}
+   // CATCH THE PRE-LOADED DATA FROM THE SERVER
    let initialDashboardData = <?!= typeof bootstrappedDashboard !== 'undefined' ? bootstrappedDashboard : 'null' ?>;
 
 
