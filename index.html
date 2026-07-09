@@ -543,6 +543,108 @@ function switchView(page, extraParam = null) {
   }
 }
 
+function renderNewForm() {
+  const content = document.getElementById('content');
+  
+  content.innerHTML = `
+    <div class="form-container" style="max-width: 800px; margin: 0 auto; text-align: left;">
+      <form id="purchaseForm" onsubmit="handleFormSubmit(event)">
+        
+        <div style="margin-bottom: 15px;">
+          <label>Submitter Name:</label><br>
+          <input type="text" name="submitterName" required style="width: 100%; padding: 8px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label>Submitter Email:</label><br>
+          <input type="email" name="submitterEmail" required style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label>Request Title / Project:</label><br>
+          <input type="text" name="title" required style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+          <div style="flex: 1;">
+            <label>Priority:</label><br>
+            <select name="priority" style="width: 100%; padding: 8px;">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label>Date Needed By:</label><br>
+            <input type="date" name="dateNeededBy" required style="width: 100%; padding: 8px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 15px; padding: 15px; background: var(--card-bg, #f4f4f4); border-radius: 6px;">
+          <label><strong>Target Routing Departments:</strong></label><br>
+          <label style="margin-right: 15px;"><input type="checkbox" name="teams" value="AVL / Integration"> AVL / Integration</label>
+          <label style="margin-right: 15px;"><input type="checkbox" name="teams" value="Network Infrastructure"> Network Infrastructure</label>
+          <label style="margin-right: 15px;"><input type="checkbox" name="teams" value="Facilities"> Facilities</label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label>Business Justification:</label><br>
+          <textarea name="businessJustification" rows="2" style="width: 100%; padding: 8px;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label>Technical Justification:</label><br>
+          <textarea name="technicalJustification" rows="2" style="width: 100%; padding: 8px;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <label>General Notes:</label><br>
+          <textarea name="notes" rows="2" style="width: 100%; padding: 8px;"></textarea>
+        </div>
+
+        <hr style="margin-bottom: 20px;">
+        <h3>Line Items</h3>
+        
+        <div id="itemsContainer">
+          <div class="item" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+            <input type="text" name="itemName" placeholder="Item Name" required style="flex: 2; padding: 8px;">
+            <input type="text" name="vendor" placeholder="Vendor" style="flex: 1; padding: 8px;">
+            <input type="url" name="itemLink" placeholder="URL Link" style="flex: 2; padding: 8px;">
+            <input type="number" name="quantity" placeholder="Qty" value="1" required style="width: 60px; padding: 8px;">
+            <input type="number" name="unitCost" placeholder="Cost ($)" step="0.01" required style="width: 80px; padding: 8px;">
+            <input type="text" name="itemNotes" placeholder="Notes" style="flex: 1; padding: 8px;">
+          </div>
+        </div>
+        
+        <button type="button" onclick="addAnotherItem()" style="margin-bottom: 20px; padding: 8px 12px; cursor: pointer;">+ Add Another Item</button>
+
+        <div style="text-align: right;">
+          <button type="submit" id="formSubmitBtn" style="padding: 12px 24px; font-weight: bold; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit Transmission</button>
+        </div>
+        
+        <div id="formResultBox" style="display:none; margin-top: 20px; padding: 15px; border-radius: 6px;"></div>
+      </form>
+    </div>
+  `;
+}
+
+// Helper function to clone the item row
+function addAnotherItem() {
+  const container = document.getElementById('itemsContainer');
+  const firstItem = document.querySelector('.item');
+  const clone = firstItem.cloneNode(true);
+  
+  // Clear the values in the cloned row
+  const inputs = clone.querySelectorAll('input');
+  inputs.forEach(input => {
+    if (input.name === 'quantity') input.value = '1';
+    else input.value = '';
+  });
+  
+  container.appendChild(clone);
+}
+
    function addItemRow() {
      itemCount++;
      const container = document.getElementById('itemFormRowsContainer');
