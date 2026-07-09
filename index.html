@@ -505,104 +505,43 @@ async function fetchRecordDetails(id) {
    let activePage = 'dashboard';
    let systemTeams = ["Tech/Production","Worship","Hospitality","Security","Kids","Next-Gen"];
 
-
    function updateNavHighlights(page) {
      document.querySelectorAll('.nav').forEach(b => b.classList.remove('active'));
      if (page === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
      if (page === 'requests') document.getElementById('nav-requests').classList.add('active');
    }
 
+function switchView(page, extraParam = null) {
+  activePage = page;
+  updateNavHighlights(page);
 
-   function switchView(page, extraParam = null) {
-     activePage = page;
-     updateNavHighlights(page);
-  
-     const content = document.getElementById('content');
-     const title = document.getElementById('pageTitle');
-     const subtitle = document.getElementById('pageSubtitle');
-  
-     if (page === 'dashboard' && initialDashboardData) {
-       title.textContent = 'Dashboard';
-       subtitle.textContent = 'Performance metrics and tracking modules';
-       renderDashboard(initialDashboardData);
-       initialDashboardData = null; // Clear it out so future clicks fetch fresh data
-       return;
-     }
+  const content = document.getElementById('content');
+  const title = document.getElementById('pageTitle');
+  const subtitle = document.getElementById('pageSubtitle');
 
-     content.innerHTML = '<div class="spinner"></div>';
-  
-     if (page === 'dashboard') {
-       title.textContent = 'Dashboard';
-       subtitle.textContent = 'Performance metrics and tracking modules';
-       fetchDashboard();
-     } else if (page === 'requests') {
-       title.textContent = 'Requests History';
-       subtitle.textContent = 'Audit register log of processed purchasing pipeline records';
-       fetchRequestsHistory();
-     } else if (page === 'new-form') {
-       title.textContent = 'Create Request';
-       subtitle.textContent = 'File a new purchase request';
-       renderNewForm();
-     } else if (page === 'details' && extraParam) {
-       title.textContent = 'Record Profile View';
-       subtitle.textContent = 'Inspecting audit details for record cluster references';
-       fetchRecordDetails(extraParam);
-     } else {
-       content.innerHTML = '<div style="padding:20px;color:var(--muted)">Module interface error path context.</div>';
-     }
-   }
+  // Show a spinner while the data fetches
+  content.innerHTML = '<div class="spinner"></div>';
 
-   let itemCount = 0;
-   function renderNewForm() {
-     itemCount = 0;
-     const content = document.getElementById('content');
-     content.innerHTML = `
-       <div class="card" style="background:rgba(255,255,255,0.02)">
-         <form id="requestForm">
-           <div class="grid two">
-             <label>First & Last Name <input name="submitterName" required></label>
-             <label>Enter your email address for confirmation & updates<input name="submitterEmail" type="email" required></label>
-           </div>
-           <label>Purchase Request Title / Project Summary <input name="title" required placeholder="e.g., AVL Equipment"></label>
-           <div class="grid two">
-             <label>Priority
-               <select name="priority" required>
-                 <option value="Medium">Standard</option>
-                 <option value="Low">Low</option>
-                 <option value="Critical">Critical</option>
-               </select>
-             </label>
-             <label>When is this needed by?<input name="dateNeededBy" type="date" required></label>
-           </div>
-           <fieldset>
-             <legend>For which Team/Teams?</legend>
-             <div class="checks">
-               ${systemTeams.map(t => `<label><input type="checkbox" name="teams" value="${esc(t)}"> ${esc(t)}</label>`).join('')}
-             </div>
-           </fieldset>
-        
-           <h2 style="margin-top:32px;font-size:18px;font-weight:600;color:var(--accent);">Itemized Lines</h2>
-           <div id="itemFormRowsContainer"></div>
-           <button type="button" class="secondary" id="addNewItemFormRowBtn">+ Add Another Item</button>
-        
-           <h2 style="margin-top:32px;font-size:18px;font-weight:600;color:var(--accent);">Justification</h2>
-           <label>Business Purpose<textarea name="businessJustification" rows="3" required placeholder="Required background logic case..."></textarea></label>
-           <label>Technical Justification<textarea name="technicalJustification" rows="3" placeholder="Optional architectural mapping metrics..."></textarea></label>
-           <label>General Comments<textarea name="notes" rows="2" placeholder="Delivery notes, instructions..."></textarea></label>
-        
-           <div style="margin-top:32px;display:flex;justify-content:flex-end;">
-             <button class="primary-btn" type="submit" id="formSubmitBtn" style="width:200px;">CSubmit</button>
-           </div>
-           <div id="formResultBox" style="none;"></div>
-         </form>
-       </div>
-     `;
-  
-     document.getElementById('addNewItemFormRowBtn').addEventListener('click', addItemRow);
-     document.getElementById('requestForm').addEventListener('submit', handleFormSubmit);
-     addItemRow();
-   }
-
+  if (page === 'dashboard') {
+    title.textContent = 'Dashboard';
+    subtitle.textContent = 'Performance metrics and tracking modules';
+    fetchDashboard();
+  } else if (page === 'requests') {
+    title.textContent = 'Requests History';
+    subtitle.textContent = 'Audit register log of processed purchasing pipeline records';
+    fetchRequestsHistory();
+  } else if (page === 'new-form') {
+    title.textContent = 'Create Request';
+    subtitle.textContent = 'File a new purchase request';
+    renderNewForm();
+  } else if (page === 'details' && extraParam) {
+    title.textContent = 'Record Profile View';
+    subtitle.textContent = 'Inspecting audit details for record cluster references';
+    fetchRecordDetails(extraParam);
+  } else {
+    content.innerHTML = '<div style="padding:20px;color:var(--muted)">Module interface error path context.</div>';
+  }
+}
 
    function addItemRow() {
      itemCount++;
@@ -687,20 +626,8 @@ async function fetchRecordDetails(id) {
     resBox.textContent = 'Execution Failure Fault Exception: ' + err.message;
     resBox.style.background = 'rgba(239,68,68,0.1)';
   }
-}       .withSuccessHandler(res => {
-         resBox.innerHTML = `Transmission Confirmation Secure: Created index key reference <strong>${res.requestId}</strong>. Processing confirmation manifests.`;
-         setTimeout(() => switchView('dashboard'), 2500);
-       })
-       .withFailureHandler(err => {
-         submitBtn.disabled = false;
-         submitBtn.textContent = 'Retry Transaction Submission';
-         resBox.textContent = 'Execution Failure Fault Exception: ' + err.message;
-         resBox.style.background = 'rgba(239,68,68,0.1)';
-       })
-       .submitRequest(payload);
-   }
-
-
+}
+ 
    // Utilities
    function esc(v) {
      return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
