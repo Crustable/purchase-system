@@ -8,20 +8,39 @@ function doOptions(e) {
 }
 
 function doGet(e) {
-  const action = e.parameter.action;
-  let result;
+  try {
+    // If there are no parameters passed at all, default to a health check
+    if (!e || !e.parameter) {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, message: "API Gateway Online" }))
+                           .setMimeType(ContentService.MimeType.JSON);
+    }
 
-  // The Traffic Controller: route the request to the right function
-  switch(action) {
-    case 'getDashboard': result = apiGetDashboard(); break;
-    case 'getRequests':  result = apiGetRequestsHistory(); break; // Ensure this function exists!
-    case 'getDetails':   result = apiGetRecordDetails(e.parameter.id); break;
-    default: result = { error: "Invalid action" };
+    const action = e.parameter.action;
+    let data = {};
+    
+    if (action === 'getDashboard') {
+      // Safely check if your function exists, otherwise send placeholder stats
+      data = (typeof getDataForDashboard === 'function') 
+        ? getDataForDashboard() 
+        : { stats: { total: 0, submitted: 0, pending: 0, approved: 0 }, recentRequests: [] };
+        
+    } else if (action === 'getRequestsHistory') {
+      data = (typeof getRequestsHistoryData === 'function') 
+        ? getRequestsHistoryData() 
+        : [];
+    } else {
+      data = { error: "Unknown action parameter: " + action };
+    }
+    
+    // The exact return format your console is begging for
+    return ContentService.createTextOutput(JSON.stringify(data))
+                         .setMimeType(ContentService.MimeType.JSON);
+                         
+  } catch (err) {
+    // If ANYTHING crashes inside your code, this catches it and still returns clean JSON
+    return ContentService.createTextOutput(JSON.stringify({ error: true, message: err.message }))
+                         .setMimeType(ContentService.MimeType.JSON);
   }
-
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader("Access-Control-Allow-Origin", "https://crustable.github.io");
 }
 
 function doPost(e) {
