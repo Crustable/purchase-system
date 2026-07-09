@@ -11,10 +11,12 @@ function doGet(e) {
   const action = e.parameter.action;
   let result;
 
-  if (action === 'getDashboard') {
-    result = apiGetDashboard();
-  } else if (action === 'getRequests') {
-    result = apiGetRequestsHistory();
+  // The Traffic Controller: route the request to the right function
+  switch(action) {
+    case 'getDashboard': result = apiGetDashboard(); break;
+    case 'getRequests':  result = apiGetRequestsHistory(); break; // Ensure this function exists!
+    case 'getDetails':   result = apiGetRecordDetails(e.parameter.id); break;
+    default: result = { error: "Invalid action" };
   }
 
   return ContentService.createTextOutput(JSON.stringify(result))
