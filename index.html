@@ -519,8 +519,7 @@ function switchView(page, extraParam = null) {
   const title = document.getElementById('pageTitle');
   const subtitle = document.getElementById('pageSubtitle');
 
-  // Show a spinner while the data fetches
-  content.innerHTML = '<div class="spinner"></div>';
+  content.innerHTML = '<div class="spinner"></div>'; //Show a loading spinner while the data syncs.
 
   if (page === 'dashboard') {
     title.textContent = 'Dashboard';
