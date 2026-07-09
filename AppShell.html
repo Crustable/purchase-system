@@ -1,0 +1,32 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div style="flex:1; display:flex; flex-direction:column;">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div>
+          <h2>Pathway</h2>
+          <span>Request System v3</span>
+        </div>
+      </div>
+      <nav>
+        <button class="nav active" data-page="dashboard">Analytic Dashboard</button>
+        <button class="nav" data-page="requests">Requests Ledger</button>
+      </nav>
+    </div>
+    <div style="font-size:11px; color:var(--muted); text-align:center; border-top:1px solid var(--border); padding-top:16px;">
+      Enterprise Environment Pure Cloud Instance
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="page-header">
+      <div>
+        <h1 id="pageTitle">System Loading</h1>
+        <p id="pageSubtitle">Syncing server variables...</p>
+      </div>
+      <button class="primary-btn" id="newRequestBtn">+ File New Request</button>
+    </section>
+
+    <section id="content"></section>
+  </main>
+</div>

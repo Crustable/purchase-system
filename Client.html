@@ -1,0 +1,65 @@
+<script>
+google.script.run
+.withSuccessHandler(renderDashboard)
+.apiGetDashboard();
+
+function renderDashboard(data){
+
+const content=document.getElementById("content");
+
+content.innerHTML=`
+<div class="cards">
+
+<div class="card">
+<h3>Total Requests</h3>
+<div class="value">${data.stats.total}</div>
+</div>
+
+<div class="card">
+<h3>Submitted</h3>
+<div class="value">${data.stats.submitted}</div>
+</div>
+
+<div class="card">
+<h3>Approved</h3>
+<div class="value">${data.stats.approved}</div>
+</div>
+
+<div class="card">
+<h3>Completed</h3>
+<div class="value">${data.stats.completed}</div>
+</div>
+
+</div>
+
+<div class="table">
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Status</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody>
+
+${data.recentRequests.map(r=>`
+<tr>
+<td>${r.id}</td>
+<td>${r.title}</td>
+<td><span class="badge">${r.status}</span></td>
+<td>${r.total||""}</td>
+</tr>
+`).join("")}
+
+</tbody>
+
+</table>
+</div>
+`;
+
+}
+</script>

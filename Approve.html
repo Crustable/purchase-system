@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <title>Workflow Approval Evaluation Window</title>
+  <?!= include('Styles'); ?>
+  <style>
+    body { display: flex; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
+    .wrap { width: 100%; max-width: 800px; margin: auto; }
+    .summary-box { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin: 20px 0; }
+    .summary-box p { margin: 8px 0; font-size: 14px; }
+    .actions-cluster { display: flex; gap: 16px; margin-top: 24px; }
+    .btn-action { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: transform 0.2s; color: #fff; }
+    .btn-action:hover { transform: translateY(-1px); }
+    .btn-approve { background: var(--success); }
+    .btn-info { background: var(--warning); color: #000; }
+    .btn-deny { background: var(--danger); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1 style="font-size:24px;margin-bottom:8px;">Transaction Security Portal Approval v3</h1>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Confirm validation step constraints across current processing node</p>
+      
+      <div id="loadingTarget"><div class="spinner"></div></div>
+      <div id="viewContainer" style="display:none;">
+        <div id="contentPane"></div>
+        
+        <label style="margin-top:24px;">Decision Matrix Tracking Verification Notes / Comments
+          <textarea id="comments" rows="3" placeholder="Provide reason or operational context updates if required..."></textarea>
+        </label>
+        
+        <div class="actions-cluster">
+          <button class="btn-action btn-approve" onclick="fireDecision('Approved')">Authorize Approval</button>
+          <button class="btn-action btn-info" onclick="fireDecision('Needs More Info')">Request Details Information</button>
+          <button class="btn-action btn-deny" onclick="fireDecision('Denied')">Reject Denied</button>
+        </div>
+        <p id="operationFeedback" class="result" style="display:none;"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const requestId = '<?= requestId ?>';
+    const token = '<?= token ?>';
+
+    function runResolutionMap() {
+      google.script.run
+        .withSuccessHandler(payload => {
+          document.getElementById('loadingTarget').style.display = 'none';
+          document.getElementById('viewContainer').style.display = 'block';
+          
+          const r = payload.request;
+          const items = payload.items;
+          const step = payload.approvalStep;
+          
+          let itemsHtml = items.map(i => `
+            <tr>
+              <td>${i['Quantity']}</td>
+              <td style="font-weight:500;">${esc(i['Item Name'])}</td>
+              <td>${esc(i['Vendor'] || '-')}</td>
+              <td>$${Number(i['Unit Cost']).toFixed(2)}</td>
+              <td style="font-weight:600;">$${Number(i['Line Total']).toFixed(2)}</td>
+            </tr>
+          `).join('');
+
+          document.getElementById('contentPane').innerHTML = `
+            <div class="summary-box">
+              <h2 style="color:var(--accent);font-size:20px;margin-bottom:12px;">${esc(r['Request ID'])}: ${esc(r['Request Title'])}</h2>
+              <p><strong>Originator Submitter:</strong> ${esc(r['Submitter Name'])} (${esc(r['Submitter Email'])})</p>
+              <p><strong>Assigned Group:</strong> ${esc(step['Team'])} [Level ${esc(step['Approval Level'])}]</p>
+              <p><strong>Gross Valuation Amount:</strong> <span style="color:var(--success);font-weight:600;">$${Number(r['Total Cost']).toFixed(2)}</span></p>
+              <p><strong>Target Implementation Date:</strong> ${esc(r['Date Needed'])}</p>
+            </div>
+            
+            <h3 style="font-size:16px;font-weight:600;margin-top:20px;margin-bottom:10px;">Item Allocation Table</h3>
+            <div class="table-wrap" style="margin-top:0;">
+              <table>
+                <thead>
+                  <tr><th>Qty</th><th>Specification Description</th><th>Vendor</th><th>Unit</th><th>Aggregate</th></tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+              </table>
+            </div>
+
+            <h3 style="font-size:14px;font-weight:600;margin-top:20px;color:var(--muted);">Business Allocation Justification Case</h3>
+            <p style="font-size:14px;background:rgba(0,0,0,0.2);padding:12px;border-radius:6px;margin-top:4px;">${esc(r['Business Justification'] || 'No context filed.')}</p>
+          `;
+        })
+        .withFailureHandler(err => {
+          document.getElementById('loadingTarget').innerHTML = `<div style="color:var(--danger);padding:20px;">Verification failure tracking token: ${err.message}</div>`;
+        })
+        .getRequestForApproval(requestId, token);
+    }
+
+    function fireDecision(decision) {
+      const fb = document.getElementById('operationFeedback');
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(255,255,255,0.05)';
+      fb.textContent = 'Transmitting parameter configurations...';
+      
+      google.script.run
+        .withSuccessHandler(res => {
+          fb.textContent = res.message;
+          fb.style.background = 'rgba(16,185,129,0.1)';
+          document.querySelectorAll('.btn-action').forEach(b => b.disabled = true);
+        })
+        .withFailureHandler(err => {
+          fb.textContent = 'Operation adjustment error layout fault: ' + err.message;
+          fb.style.background = 'rgba(239,68,68,0.1)';
+        })
+        .approveRequest(requestId, token, decision, document.getElementById('comments').value);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    window.onload = runResolutionMap;
+  </script>
+</body>
+</html>

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <base target="_top">
+ <title>Pathway Request System v3</title>
+ <style>
+   :root {
+     --bg: #0f172a;
+     --surface: #182234;
+     --surface2: #223048;
+     --accent: #4f8cff;
+     --accent2: #7c5cff;
+     --text: #f8fafc;
+     --muted: #94a3b8;
+     --border: rgba(255, 255, 255, .08);
+     --danger: #ef4444;
+     --success: #10b981;
+     --warning: #f59e0b;
+   }
+   * {
+     margin: 0;
+     padding: 0;
+     box-sizing: border-box;
+     font-family: 'Inter', system-ui, -apple-system, Arial, sans-serif;
+   }
+   body {
+     background: linear-gradient(135deg, #0b1220, #182235, #0f172a);
+     color: var(--text);
+     min-height: 100vh;
+     overflow-x: hidden;
+   }
+   .shell {
+     display: flex;
+     height: 100vh;
+   }
+   .sidebar {
+     width: 260px;
+     background: rgba(20, 27, 40, .85);
+     backdrop-filter: blur(20px);
+     -webkit-backdrop-filter: blur(20px);
+     border-right: 1px solid var(--border);
+     padding: 28px 20px;
+     display: flex;
+     flex-direction: column;
+     justify-content: space-between;
+   }
+   .brand {
+     display: flex;
+     align-items: center;
+     gap: 14px;
+     margin-bottom: 40px;
+   }
+   .brand-mark {
+     width: 44px;
+     height: 44px;
+     border-radius: 12px;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     background: linear-gradient(135deg, var(--accent), var(--accent2));
+     font-weight: bold;
+     font-size: 20px;
+     color: #fff;
+   }
+   .brand h2 {
+     font-size: 18px;
+     font-weight: 700;
+     letter-spacing: -0.5px;
+   }
+   .brand span {
+     display: block;
+     color: var(--muted);
+     font-size: 12px;
+     font-weight: 400;
+   }
+   nav {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     flex: 1;
+   }
+   .nav {
+     background: none;
+     border: none;
+     color: var(--muted);
+     padding: 14px 16px;
+     border-radius: 12px;
+     text-align: left;
+     cursor: pointer;
+     transition: all .2s ease;
+     font-size: 14px;
+     font-weight: 500;
+   }
+   .nav:hover {
+     background: rgba(255, 255, 255, .05);
+     color: #fff;
+   }
+   .nav.active {
+     background: linear-gradient(90deg, var(--accent), var(--accent2));
+     color: #fff;
+   }
+   .main {
+     flex: 1;
+     padding: 40px;
+     overflow-y: auto;
+     display: flex;
+     flex-direction: column;
+   }
+   .page-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 32px;
+   }
+   .page-header h1 {
+     font-size: 32px;
+     font-weight: 700;
+     letter-spacing: -0.8px;
+   }
+   .page-header p {
+     margin-top: 4px;
+     color: var(--muted);
+     font-size: 14px;
+   }
+   .primary-btn {
+     background: linear-gradient(135deg, var(--accent), var(--accent2));
+     color: white;
+     border: none;
+     padding: 14px 24px;
+     border-radius: 12px;
+     font-weight: 600;
+     cursor: pointer;
+     transition: all .2s;
+     box-shadow: 0 8px 20px rgba(79, 140, 255, .25);
+   }
+   .primary-btn:hover {
+     transform: translateY(-1px);
+     box-shadow: 0 12px 24px rgba(79, 140, 255, .35);
+   }
+   .cards {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+     gap: 24px;
+   }
+   .card {
+     background: rgba(255, 255, 255, .04);
+     backdrop-filter: blur(20px);
+     -webkit-backdrop-filter: blur(20px);
+     border: 1px solid var(--border);
+     border-radius: 16px;
+     padding: 24px;
+     box-shadow: 0 10px 30px rgba(0,0,0,.2);
+   }
+   .card h3 {
+     color: var(--muted);
+     font-size: 13px;
+     font-weight: 500;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+     margin-bottom: 8px;
+   }
+   .card .value {
+     font-size: 36px;
+     font-weight: 700;
+     letter-spacing: -1px;
+   }
+   .table-wrap {
+     margin-top: 32px;
+     background: rgba(255, 255, 255, .03);
+     border: 1px solid var(--border);
+     border-radius: 16px;
+     overflow: hidden;
+   }
+   table {
+     width: 100%;
+     border-collapse: collapse;
+     text-align: left;
+   }
+   th {
+     background: #131c2e;
+     padding: 16px;
+     color: #dbeafe;
+     font-size: 13px;
+     font-weight: 600;
+     text-transform: uppercase;
+   }
+   td {
+     padding: 16px;
+     border-top: 1px solid rgba(255, 255, 255, .05);
+     font-size: 14px;
+     vertical-align: middle;
+   }
+   tr:hover td {
+     background: rgba(255, 255, 255, .02);
+   }
+   .badge {
+     display: inline-flex;
+     align-items: center;
+     padding: 6px 12px;
+     border-radius: 9999px;
+     font-size: 12px;
+     font-weight: 600;
+   }
+   .badge-status { background: rgba(79, 140, 255, 0.15); color: #60a5fa; }
+   .badge-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+   .badge-denied { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+   .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    /* Details Page Specific Formatting styles */
+   .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 10px; }
+   .detail-block { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+   .detail-label { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+   .detail-value { font-size: 15px; margin-bottom: 16px; color: #fff; }
+    form label { display: block; margin-top: 16px; font-size: 13px; font-weight: 500; color: var(--muted); }
+   form input, form select, form textarea { width: 100%; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: #fff; margin-top: 6px; font-size: 14px; transition: border .2s; }
+   form input:focus, form select:focus, form textarea:focus { outline: none; border-color: var(--accent); }
+   .grid { display: grid; gap: 20px; }
+   .grid.two { grid-template-columns: 1fr 1fr; }
+   fieldset { border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-top: 20px; background: rgba(0,0,0,0.1); }
+   legend { padding: 0 8px; font-size: 13px; color: var(--muted); }
+   .checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
+   .checks label { display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; color: #fff; }
+   .checks input { width: auto; margin: 0; }
+   .item { border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-top: 16px; background: rgba(255,255,255,0.02); position: relative; }
+   .item-head { font-weight: 600; font-size: 14px; color: var(--accent); margin-bottom: 12px; }
+   .secondary { background: var(--surface2); color: #fff; border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; cursor: pointer; margin-top: 12px; font-size: 13px; font-weight: 500; }
+   .secondary:hover { background: rgba(255,255,255,0.1); }
+   .result { margin-top: 20px; padding: 14px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 14px; text-align: center; }
+   .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+   @keyframes spin { to { transform: rotate(360deg); } }
+   @media (max-width: 768px) {
+     .shell { flex-direction: column; }
+     .sidebar { width: 100%; height: auto; padding: 16px; }
+     .brand { margin-bottom: 16px; }
+     nav { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+     .main { padding: 20px; }
+     .grid.two { grid-template-columns: 1fr; }
+     .detail-grid { grid-template-columns: 1fr; }
+   }
+ </style>
+</head>
+<body>
+ <div class="shell">
+   <aside class="sidebar">
+     <div style="flex:1; display:flex; flex-direction:column;">
+       <div class="brand">
+         <div class="brand-mark">P</div>
+         <div>
+           <h2>Pathway</h2>
+           <span>Request System v3</span>
+         </div>
+       </div>
+       <nav>
+         <button class="nav active" id="nav-dashboard" onclick="switchView('dashboard')">Dashboard</button>
+         <button class="nav" id="nav-requests" onclick="switchView('requests')">Requests Ledger</button>
+       </nav>
+     </div>
+     <div style="font-size:11px; color:var(--muted); text-align:center; border-top:1px solid var(--border); padding-top:16px;">
+       Enterprise Environment Pure Cloud Instance
+     </div>
+   </aside>
+
+
+   <main class="main">
+     <section class="page-header">
+       <div>
+         <h1 id="pageTitle">System Loading</h1>
+         <p id="pageSubtitle">Syncing server variables...</p>
+       </div>
+       <button class="primary-btn" id="newRequestBtn" onclick="switchView('new-form')">+ Submit New Request</button>
+     </section>
+     <section id="content"></section>
+   </main>
+ </div>
+
+
+ <script>
+   // Pulls down the Web App base URL natively via direct scriptlet evaluation
+   const WEB_APP_URL = "<?= ScriptApp.getService().getUrl() ?>";
+    // CATCH THE PRE-LOADED DATA FROM THE SERVER
+   let initialDashboardData = <?!= typeof bootstrappedDashboard !== 'undefined' ? bootstrappedDashboard : 'null' ?>;
+
+
+   // State Tracking
+   let activePage = 'dashboard';
+   let systemTeams = ["Tech/Production","Worship","Hospitality","Security","Kids","Next-Gen"];
+
+
+   function updateNavHighlights(page) {
+     document.querySelectorAll('.nav').forEach(b => b.classList.remove('active'));
+     if (page === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
+     if (page === 'requests') document.getElementById('nav-requests').classList.add('active');
+   }
+
+
+   function switchView(page, extraParam = null) {
+     activePage = page;
+     updateNavHighlights(page);
+  
+     const content = document.getElementById('content');
+     const title = document.getElementById('pageTitle');
+     const subtitle = document.getElementById('pageSubtitle');
+  
+     if (page === 'dashboard' && initialDashboardData) {
+       title.textContent = 'Dashboard';
+       subtitle.textContent = 'Performance metrics and tracking modules';
+       renderDashboard(initialDashboardData);
+       initialDashboardData = null; // Clear it out so future clicks fetch fresh data
+       return;
+     }
+
+     content.innerHTML = '<div class="spinner"></div>';
+  
+     if (page === 'dashboard') {
+       title.textContent = 'Dashboard';
+       subtitle.textContent = 'Performance metrics and tracking modules';
+       fetchDashboard();
+     } else if (page === 'requests') {
+       title.textContent = 'Requests History';
+       subtitle.textContent = 'Audit register log of processed purchasing pipeline records';
+       fetchRequestsHistory();
+     } else if (page === 'new-form') {
+       title.textContent = 'Create Request';
+       subtitle.textContent = 'File a new purchase request';
+       renderNewForm();
+     } else if (page === 'details' && extraParam) {
+       title.textContent = 'Record Profile View';
+       subtitle.textContent = 'Inspecting audit details for record cluster references';
+       fetchRecordDetails(extraParam);
+     } else {
+       content.innerHTML = '<div style="padding:20px;color:var(--muted)">Module interface error path context.</div>';
+     }
+   }
+
+
+   // Standard fetch for when the user navigates away and comes back
+   function fetchDashboard() {
+     google.script.run
+       .withSuccessHandler(data => renderDashboard(data))
+       .withFailureHandler(err => showError(err.message))
+       .apiGetDashboard();
+   }
+
+
+   // The dedicated rendering function for the dashboard UI
+   function renderDashboard(data) {
+     const content = document.getElementById('content');
+     content.innerHTML = `
+       <div class="cards">
+         <div class="card"><h3>Total Database Rows</h3><div class="value">${data.stats.total}</div></div>
+         <div class="card"><h3>Submitted Pipeline</h3><div class="value" style="color:var(--accent)">${data.stats.submitted}</div></div>
+         <div class="card"><h3>Pending Decisions</h3><div class="value" style="color:var(--warning)">${data.stats.pending}</div></div>
+         <div class="card"><h3>Approved Clearance</h3><div class="value" style="color:var(--success)">${data.stats.approved}</div></div>
+       </div>
+       <h2 style="margin-top:40px;margin-bottom:16px;font-size:20px;font-weight:600;">Recent Procurement Events</h2>
+       <div class="table-wrap">
+         <table>
+           <thead>
+             <tr>
+               <th>Record ID</th>
+               <th>Request Name / Summary</th>
+               <th>Cost Total</th>
+               <th>Workflow Assignment</th>
+               <th>Current Status</th>
+             </tr>
+           </thead>
+           <tbody>
+             ${data.recentRequests.map(r => `
+               <tr>
+                 <td style="font-weight:600;">
+                   <a href="#" onclick="switchView('details', '${esc(r.id)}'); return false;" style="color:var(--accent); text-decoration:underline;">
+                     ${esc(r.id)}
+                   </a>
+                 </td>
+                 <td>
+                   <div style="font-weight:500;">${esc(r.title)}</div>
+                   <div style="font-size:12px;color:var(--muted)">${esc(r.department)}</div>
+                 </td>
+                 <td style="font-weight:500;">$${Number(r.total || 0).toFixed(2)}</td>
+                 <td style="font-size:13px;color:var(--muted);">${esc(r.priority)}</td>
+                 <td><span class="badge ${getStatusClass(r.status)}">${esc(r.status)}</span></td>
+               </tr>
+             `).join('')}
+             ${data.recentRequests.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No records registered.</td></tr>' : ''}
+           </tbody>
+         </table>
+       </div>
+     `;
+   }
+
+
+   function fetchRequestsHistory() {
+     google.script.run
+       .withSuccessHandler(rows => {
+         const content = document.getElementById('content');
+         content.innerHTML = `
+           <div class="table-wrap">
+             <table>
+               <thead>
+                 <tr>
+                   <th>ID</th>
+                   <th>Title Summary</th>
+                   <th>Total</th>
+                   <th>Assignee Owner</th>
+                   <th>Status Phase</th>
+                   <th>File</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 ${rows.map(r => `
+                   <tr>
+                     <td style="font-weight:600;">
+                       <a href="#" onclick="switchView('details', '${esc(r['Request ID'])}'); return false;" style="color:var(--accent); text-decoration:underline;">
+                         ${esc(r['Request ID'])}
+                       </a>
+                     </td>
+                     <td>
+                       <div style="font-weight:500;">${esc(r['Request Title'])}</div>
+                       <div style="font-size:12px;color:var(--muted);">${esc(r['Team(s)'])}</div>
+                     </td>
+                     <td style="font-weight:500;">$${Number(r['Total Cost'] || 0).toFixed(2)}</td>
+                     <td style="font-size:13px;color:var(--muted);">${esc(r['Current Approver'] || '-')}</td>
+                     <td><span class="badge ${getStatusClass(r['Status'])}">${esc(r['Status'])}</span></td>
+                     <td>
+                       ${r['PDF Link'] ? `<a href="${r['PDF Link']}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;">View PDF</a>` : `<span style="color:var(--muted)">Unavailable</span>`}
+                     </td>
+                   </tr>
+                 `).join('')}
+               </tbody>
+             </table>
+           </div>
+         `;
+       })
+       .withFailureHandler(err => showError(err.message))
+       .apiGetAllRequests();
+   }
+
+
+   function fetchRecordDetails(id) {
+     google.script.run
+       .withSuccessHandler(res => {
+         const content = document.getElementById('content');
+         if (!res || !res.request) {
+           content.innerHTML = `<div style="padding:20px;color:var(--danger)">Record ${esc(id)} was not resolved or found in databases.</div>`;
+           return;
+         }
+      
+         const req = res.request;
+         const title = document.getElementById('pageTitle');
+         title.innerHTML = `Request ID: <span style="color:var(--accent)">${esc(id)}</span>`;
+
+
+         // Check if there is a PDF Link in the row
+         const pdfUrl = req['PDF Link'] || req.pdfLink;
+         const pdfButtonHtml = pdfUrl
+           ? `<a href="${pdfUrl}" target="_blank" class="primary-btn" style="display:block; text-align:center; text-decoration:none; margin-top:20px; width:100%;">Download / View PDF</a>`
+           : `<button class="secondary" disabled style="width:100%; margin-top:20px; opacity:0.5; cursor:not-allowed;">PDF Unavailable</button>`;
+
+
+         content.innerHTML = `
+           <div style="margin-bottom:20px;">
+             <button class="secondary" onclick="switchView('dashboard')" style="margin-top:0;">&larr; Back to Dashboard</button>
+           </div>
+        
+           <div class="detail-grid">
+             <div>
+               <div class="detail-block">
+                 <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Request Summary</h2>
+                 <div class="detail-label">Summary</div>
+                 <div class="detail-value" style="font-size:18px;font-weight:600;color:var(--accent);">${esc(req['Request Title'] || req.title)}</div>
+              
+                 <div class="grid two">
+                   <div>
+                     <div class="detail-label">Submitter</div>
+                     <div class="detail-value">${esc(req['Submitter Name'] || req.submitterName)} (${esc(req['Submitter Email'] || req.submitterEmail)})</div>
+                   </div>
+                   <div>
+                     <div class="detail-label">Required Deadline</div>
+                     <div class="detail-value">${esc(req['Date Needed By'] || req.dateNeededBy)}</div>
+                   </div>
+                 </div>
+
+
+                 <div class="detail-label">Selected Teams</div>
+                 <div class="detail-value">${esc(req['Team(s)'] || req.teams)}</div>
+               </div>
+
+
+               <div class="detail-block">
+                 <h2 style="font-size:18px;margin-bottom:20px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:10px;">Justification</h2>
+                 <div class="detail-label">Business Purpose</div>
+                 <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Business Justification'] || req.businessJustification || 'None declared')}</div>
+              
+                 <div class="detail-label" style="margin-top:16px;">Technical Infrastructure Blueprint Specifications</div>
+                 <div class="detail-value" style="background:rgba(0,0,0,0.15);padding:12px;border-radius:8px;font-size:14px;line-height:1.5;">${esc(req['Technical Justification'] || req.technicalJustification || 'None declared')}</div>
+               </div>
+
+
+               <div class="detail-block">
+                 <h2 style="font-size:18px;margin-bottom:16px;font-weight:600;">Requested Items:</h2>
+                 <div class="table-wrap" style="margin-top:0;">
+                   <table>
+                     <thead>
+                       <tr>
+                         <th>Item Description</th>
+                         <th>Vendor</th>
+                         <th>Qty</th>
+                         <th>Unit Rate</th>
+                         <th>Subtotal Valuation</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       ${(res.items || []).map(it => `
+                         <tr>
+                           <td style="font-weight:500;">
+                             ${it['Item Name'] || it.itemName}
+                             ${(it['Item Link'] || it.itemLink) ? `<br><a href="${it['Item Link'] || it.itemLink}" target="_blank" style="font-size:11px;color:var(--accent);">Catalog Reference URL &rarr;</a>` : ''}
+                           </td>
+                           <td>${esc(it['Vendor'] || it.vendor || '-')}</td>
+                           <td>${esc(it['Quantity'] || it.quantity)}</td>
+                           <td>$${Number(it['Unit Cost'] || it.unitCost || 0).toFixed(2)}</td>
+                           <td style="font-weight:600;color:var(--accent);">$${Number(it['Total Cost'] || (it.quantity * it.unitCost) || 0).toFixed(2)}</td>
+                         </tr>
+                       `).join('')}
+                       ${(!res.items || res.items.length === 0) ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No line item structures.</td></tr>' : ''}
+                     </tbody>
+                   </table>
+                 </div>
+               </div>
+             </div>
+
+
+             <div>
+               <div class="detail-block">
+                 <h2 style="font-size:16px;margin-bottom:16px;font-weight:600;">Approval Step</h2>
+                 <div class="detail-label">Current Status</div>
+                 <div style="margin-bottom:20px;"><span class="badge ${getStatusClass(req['Status'] || req.status)}" style="font-size:14px;padding:8px 16px;">${esc(req['Status'] || req.status)}</span></div>
+              
+                 <div class="detail-label">Current Task Assigned Owner</div>
+                 <div class="detail-value" style="font-weight:600;">${esc(req['Current Approver'] || req.currentApprover || 'Pipeline Resolved')}</div>
+
+
+                 <div class="detail-label">Total Request Cost</div>
+                 <div class="value" style="color:var(--success);font-size:28px;font-weight:700;letter-spacing:-0.5px;">$${Number(req['Total Cost'] || req.totalCost || 0).toFixed(2)}</div>
+              
+                 ${pdfButtonHtml}
+               </div>
+             </div>
+           </div>
+         `;
+       })
+       .withFailureHandler(err => showError(err.message))
+       .getRequestDetailsForView(id);
+   }
+
+
+   let itemCount = 0;
+   function renderNewForm() {
+     itemCount = 0;
+     const content = document.getElementById('content');
+     content.innerHTML = `
+       <div class="card" style="background:rgba(255,255,255,0.02)">
+         <form id="requestForm">
+           <div class="grid two">
+             <label>First & Last Name <input name="submitterName" required></label>
+             <label>Enter your email address for confirmation & updates<input name="submitterEmail" type="email" required></label>
+           </div>
+           <label>Purchase Request Title / Project Summary <input name="title" required placeholder="e.g., AVL Equipment"></label>
+           <div class="grid two">
+             <label>Priority
+               <select name="priority" required>
+                 <option value="Medium">Standard</option>
+                 <option value="Low">Low</option>
+                 <option value="Critical">Critical</option>
+               </select>
+             </label>
+             <label>When is this needed by?<input name="dateNeededBy" type="date" required></label>
+           </div>
+           <fieldset>
+             <legend>For which Team/Teams?</legend>
+             <div class="checks">
+               ${systemTeams.map(t => `<label><input type="checkbox" name="teams" value="${esc(t)}"> ${esc(t)}</label>`).join('')}
+             </div>
+           </fieldset>
+        
+           <h2 style="margin-top:32px;font-size:18px;font-weight:600;color:var(--accent);">Itemized Lines</h2>
+           <div id="itemFormRowsContainer"></div>
+           <button type="button" class="secondary" id="addNewItemFormRowBtn">+ Add Another Item</button>
+        
+           <h2 style="margin-top:32px;font-size:18px;font-weight:600;color:var(--accent);">Justification</h2>
+           <label>Business Purpose<textarea name="businessJustification" rows="3" required placeholder="Required background logic case..."></textarea></label>
+           <label>Technical Justification<textarea name="technicalJustification" rows="3" placeholder="Optional architectural mapping metrics..."></textarea></label>
+           <label>General Comments<textarea name="notes" rows="2" placeholder="Delivery notes, instructions..."></textarea></label>
+        
+           <div style="margin-top:32px;display:flex;justify-content:flex-end;">
+             <button class="primary-btn" type="submit" id="formSubmitBtn" style="width:200px;">CSubmit</button>
+           </div>
+           <div id="formResultBox" style="none;"></div>
+         </form>
+       </div>
+     `;
+  
+     document.getElementById('addNewItemFormRowBtn').addEventListener('click', addItemRow);
+     document.getElementById('requestForm').addEventListener('submit', handleFormSubmit);
+     addItemRow();
+   }
+
+
+   function addItemRow() {
+     itemCount++;
+     const container = document.getElementById('itemFormRowsContainer');
+     const div = document.createElement('div');
+     div.className = 'item';
+     div.innerHTML = `
+       <div class="item-head">Item #${itemCount}</div>
+       <div class="grid two">
+         <label>Item / Service Description<input name="itemName" required></label>
+         <label>Vendor<input name="vendor"></label>
+       </div>
+       <label>URL Reference Link <input name="itemLink" type="url" placeholder="https://..."></label>
+       <div class="grid two">
+         <label>Item Quantity <input name="quantity" type="number" min="1" value="1" required></label>
+         <label>Single Item Cost ($) <input name="unitCost" type="number" step="0.01" min="0.00" required placeholder="0.00"></label>
+       </div>
+       <label>Line Comments <textarea name="itemNotes" rows="1"></textarea></label>
+     `;
+     container.appendChild(div);
+   }
+
+
+   function handleFormSubmit(e) {
+     e.preventDefault();
+     const form = e.target;
+     const submitBtn = document.getElementById('formSubmitBtn');
+     const resBox = document.getElementById('formResultBox');
+  
+     const checkedTeams = Array.from(form.querySelectorAll('input[name="teams"]:checked')).map(x => x.value);
+     if(checkedTeams.length === 0) {
+       alert('Validation Error: Assign at least one target department team to direct routing rules.');
+       return;
+     }
+  
+     submitBtn.disabled = true;
+     submitBtn.textContent = 'Processing Transmission...';
+     resBox.style.display = 'block';
+     resBox.className = 'result';
+     resBox.textContent = 'Staging encryption pipeline bundles...';
+  
+     const divs = Array.from(document.querySelectorAll('.item'));
+     const items = divs.map(div => ({
+       itemName: div.querySelector('[name="itemName"]').value,
+       vendor: div.querySelector('[name="vendor"]').value,
+       itemLink: div.querySelector('[name="itemLink"]').value,
+       quantity: div.querySelector('[name="quantity"]').value,
+       unitCost: div.querySelector('[name="unitCost"]').value,
+       notes: div.querySelector('[name="itemNotes"]').value
+     }));
+  
+     const payload = {
+       submitterName: form.submitterName.value,
+       submitterEmail: form.submitterEmail.value,
+       title: form.title.value,
+       priority: form.priority.value,
+       dateNeededBy: form.dateNeededBy.value,
+       teams: checkedTeams,
+       businessJustification: form.businessJustification.value,
+       technicalJustification: form.technicalJustification.value,
+       notes: form.notes.value,
+       items
+     };
+  
+     google.script.run
+       .withSuccessHandler(res => {
+         resBox.innerHTML = `Transmission Confirmation Secure: Created index key reference <strong>${res.requestId}</strong>. Processing confirmation manifests.`;
+         setTimeout(() => switchView('dashboard'), 2500);
+       })
+       .withFailureHandler(err => {
+         submitBtn.disabled = false;
+         submitBtn.textContent = 'Retry Transaction Submission';
+         resBox.textContent = 'Execution Failure Fault Exception: ' + err.message;
+         resBox.style.background = 'rgba(239,68,68,0.1)';
+       })
+       .submitRequest(payload);
+   }
+
+
+   // Utilities
+   function esc(v) {
+     return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+   }
+   function getStatusClass(s) {
+     if(!s) return 'badge-status';
+     if(String(s).includes('Approved')) return 'badge-approved';
+     if(String(s).includes('Denied')) return 'badge-denied';
+     if(String(s).includes('Pending')) return 'badge-warning';
+     return 'badge-status';
+   }
+   function showError(m) {
+     document.getElementById('content').innerHTML = `<div style="padding:20px;border-radius:12px;background:rgba(239,68,68,0.1);border:1px solid var(--danger);">Error execution state: ${m}</div>`;
+   }
+
+
+   window.onload = () => switchView('dashboard');
+ </script>
+</body>
+</html>
